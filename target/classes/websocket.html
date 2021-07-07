@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--<meta http-equiv="Content-Type" content="text/html; charset=utf-8">-->
+    <meta charset="UTF-8">
+    <title>WebSocket客户端</title>
+
+    <style>
+    </style>
+
+    <script type="text/javascript">
+        console.log(window.WebSocket);
+
+        let socket;
+        if (!window.WebSocket) {
+            window.WebSocket = window.MozWebSocket;
+        }
+
+        // 判断当前浏览器是否支持WebSocket
+        if (window.WebSocket) {
+            // 定义生命周期函数
+            socket = new window.WebSocket("ws://192.168.55.111:9999/websocket");
+            socket.onopen = function(event) {
+                let ta = document.getElementById("responseContent");
+                ta.value = "当前的浏览器支持WebSocket,请进行后续操作\r\n";
+            };
+            socket.onmessage = function(event) {
+                let ta = document.getElementById("responseContent");
+                ta.value += event.data + "\r\n";
+            };
+            socket.onclose = function(event) {
+                let ta = document.getElementById("responseContent");
+                ta.value = "";
+                ta.value = "WebSocket连接已经关闭\r\n";
+            };
+            socket.onerror = function() {
+                let ta = document.getElementById("responseContent");
+                ta.value = "";
+                ta.value = "消息发生错误\r\n";
+            };
+            console.log(socket.readyState);
+        } else {
+            alert("您的浏览器不支持WebSocket");
+        }
+
+        function send(message) {
+            console.log(socket.readyState);
+            if (!window.WebSocket) {
+                return;
+            }
+            /**
+             * 0 CONNECTING     连接尚未建立
+             * 1 OPEN           WebSocket的连接已经建立
+             * 2 CLOSING        连接正在关闭
+             * 3 CLOSED         连接已经关闭或不可用
+             */
+            if (socket.readyState == WebSocket.OPEN) {
+                socket.send(message);
+            } else {
+                alert("WebSocket连接没有建立成功");
+            }
+        }
+
+        /**
+         * websocket长连接哟默认超时时间,超过一定时间没有发送任何消息,连接会自动断开,
+         * 解决办法是让浏览器每隔一定时间(要小于超时时间)发送一个心跳
+         */
+        window.setInterval(function () {
+            console.log("current socket reasy state ===>>>" + socket.readyState);
+           // 每隔5秒发送一次心跳，避免websocket连接因超时而自动断开
+           let ping = {"type": "ping"};
+           socket.send(JSON.stringify(ping));
+        }, 5000);
+    </script>
+</head>
+<body>
+    <form onSubmit="return false;">
+        <input type="text" name="message" value="" />
+        <br />
+        <br />
+        <input type="button" value="发送WebSocket请求消息" onclick="send(this.form.message.value)" />
+
+        <hr color="red" />
+
+        <h2>客户端接收到服务端返回的应答消息</h2>
+        <textarea id="responseContent" style="width: 1024px; height: 300px;"></textarea>
+    </form>
+</body>
+</html>
